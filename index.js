@@ -7,10 +7,6 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 
-
-DB_USER=manufacturerWebsite
-DB_PASS=rFg2jMVERm6n8LSK
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ie7h5.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -55,11 +51,15 @@ async function run(){
               expiresIn: "1d",
             });
             res.send({ result, accessToken: token });
+            console.log("accessToken",token);
+
           });
+         
           app.get("/users", async (req, res) => {
             const result = await userCollection.find().toArray();
             res.send(result);
           });
+
           app.put("/usersById", async (req, res) => {
             const id = req.query.id;
             const filter = { _id: ObjectId(id) };
@@ -93,50 +93,19 @@ async function run(){
                 res.send(result);
             });
 
-
         app.get('/tool', async(req, res) =>{
             const query = {};
             const cursor = toolCollection.find(query);
             const tools = await cursor.toArray();
             res.send(tools);
         });
-
-
-        app.post("/booking", async (req, res) => {
-            const booking = req.body;
-            const result = await bookingCollection.insertOne(booking);
+        app.post("/tool", async (req, res) => {
+            const data = req.body;
+            const result = await toolCollection.insertOne(data);
             res.send(result);
           });
 
-          app.get("/bookingByEmail", verifyJWT, async (req, res) => {
-            const email = req.query.email;
-            const result = await bookingCollection.find({ email }).toArray();
-            res.send(result);
-          });
-          app.get("/bookingById/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await purchaseCollection.findOne(query);
-            res.send(result);
-          });
-          app.delete("/bookingById/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await purchaseCollection.deleteOne(query);
-            res.send(result);
-          });
-          app.put("/bookingById/:id", async (req, res) => {
-            const id = req.params.id;
-            const item = req.body;
-            const filter = { _id: ObjectId(id) };
-            const updatedDoc = {
-              $set: item,
-            };
-            const result = await purchaseCollection.updateOne(filter, updatedDoc);
-            res.send(result);
-          });
-
-          app.get("/toolsById", async (req, res) => {
+          app.get("/toolsId", async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
             const result = await toolCollection.findOne(query);
@@ -149,6 +118,46 @@ async function run(){
             const result = await toolCollection.deleteOne(query);
             res.send(result);
         });
+
+        app.post("/booking", async (req, res) => {
+            const booking = req.body;
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+          });
+          app.get("/booking", async (req, res) => {
+            const result = await bookingCollection.find().toArray();
+            res.send(result);
+          });
+
+          app.get("/bookingByEmail", verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const result = await bookingCollection.find({ email }).toArray();
+            res.send(result);
+          });
+          app.get("/bookingById/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await bookingCollection.findOne(query);
+            res.send(result);
+          });
+          app.delete("/bookingById/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await bookingCollection.deleteOne(query);
+            res.send(result);
+          });
+          app.put("/bookingById/:id", async (req, res) => {
+            const id = req.params.id;
+            const item = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+              $set: item,
+            };
+            const result = await bookingCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+          });
+
+          
 
         
         
