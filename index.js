@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
+const stripe = require("stripe")(process.env.STRIPE_SECRETE_KEY);
 const port = process.env.PORT || 5000;
 
 
@@ -32,6 +33,7 @@ async function run(){
         const bookingCollection = client.db("manufacturer-website").collection("bookings");
         const reviewCollection = client.db("manufacturer-website").collection("reviews");
         const userCollection = client.db("manufacturer-website").collection("users");
+        const paymentCollection = client.db("manufacturer-website").collection("payments");
         
 
         app.put("/users", async (req, res) => {
@@ -146,23 +148,22 @@ async function run(){
             const result = await bookingCollection.deleteOne(query);
             res.send(result);
           });
-          app.put("/bookingById/:id", async (req, res) => {
-            const id = req.params.id;
-            const item = req.body;
-            const filter = { _id: ObjectId(id) };
+
+          app.patch("/bookingById/:id", async (req, res) => {
+            const id  = req.params.id;
+            const payment = req.body;
+            const filter = {_id: ObjectId(id)};
             const updatedDoc = {
-              $set: item,
-            };
-            const result = await bookingCollection.updateOne(filter, updatedDoc);
-            res.send(result);
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                    }
+                            }
+                const result = await paymentCollection.insertOne(payment);
+                const updatedBooking = await bookingCollection.updateOne(filter, updatedDoc);
+                res.send(updatedBooking);
           });
-
-          
-
-        
-        
-        
-
+    
         // Add review to database collection
         app.post('/review', async (req, res) => {
             const review = req.body;
@@ -175,6 +176,19 @@ async function run(){
             const result = await reviewCollection.find({}).toArray();
             res.send(result);
         })
+
+        // ==========PAYMENT===============
+        app.post('/create-payment-intent', verifyJWT, async(req, res) =>{
+          const myOrder = req.body;
+          const price = myOrder.price;
+          const amount = price*100;
+          const paymentIntent = await stripe.paymentIntents.create({
+              amount : amount,
+              currency: 'usd',
+              payment_method_types:['card']
+          });
+          res.send({clientSecret: paymentIntent.client_secret})
+          });
     }
     finally {    }
 }
